@@ -1,4 +1,4 @@
-CREATE DATABASE notifications_db;
+CREATE DATABASE notifications_db; */
 USE notifications_db;
 
 CREATE TABLE notifications (
@@ -16,5 +16,5 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
+ 
 
