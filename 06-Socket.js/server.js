@@ -1,50 +1,31 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const userRoutes = require('./routes/userRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+
 const app = express();
-const PORT = 4000;
+const server = http.createServer(app);
+const io = new Server(server);
 
-//New imports
-const http = require('http').Server(app);
-const cors = require('cors');
+app.set('view engine', 'ejs');
+app.use(express.static('public'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(cors());
+app.use('/users', userRoutes);
+app.use('/chat', chatRoutes);
 
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Hello world',
-  });
-});
+io.on('connection', (socket) => {
+    console.log('A user connected');
 
-const socketIO = require('socket.io')(http, {
-    cors: {
-        origin: "http://localhost:3000"
-    }
-});
-
-let activeUsers = [];
-//Add this before the app.get() block
-socketIO.on('connection', (socket) => {
-    socket.on("new-user-add", (newUserId) => {
-        if (!activeUsers.some((user) => user.id === newUserId)) {
-            activeUsers.push({ userId: newUserId, socketId: socket.id });
-        }
-        socketIO?.emit("get-users", activeUsers);
+    socket.on('chat message', (msg) => {
+        io.emit('chat message', msg);
     });
 
-     socket.on("disconnect", () => {
-        activeUsers = activeUsers.filter((user) => user.socketId !== socket.id);
-        socketIO.emit("get-users", activeUsers);
-    }); 
- 
-    socket.on("send-message", (data) => {
-        const { receiverId } = data;
-        const user = activeUsers.find((user) => user.userId === receiverId);
-       if (user) {
-            socketIO.to(user.socketId).emit("recieve-message", data);
-        }
-        
-    }); 
+    socket.on('disconnect', () => {
+        console.log('A user disconnected');
+    });
 });
 
-http.listen(PORT, () => {
-  console.log(`http://localhost:${PORT}`);
-});
+server.listen(3000, () => console.log('Server running on http://localhost:3000'));
